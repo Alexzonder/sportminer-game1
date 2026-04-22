@@ -5,9 +5,9 @@
       "matches": [
         {
           "id": 1,
-          "teams": "Реал Мадрид-GAMADRIT vs Барселона",
+          "teams": "Реал Мадрид vs Барселона",
           "question": "Кто победит?",
-          "answers": ["Реал Мадрид", "Барселона"],
+          "answers": ["Реал Мадрид-GAMADRIT", "Барселона"],
           "resultIndex": 0
         },
         {
