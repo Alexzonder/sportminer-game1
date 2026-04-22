@@ -1,0 +1,96 @@
+{
+  "leagues": {
+    "football": {
+      "name": "⚽ Футбол",
+      "matches": [
+        {
+          "id": 1,
+          "teams": "Реал Мадрид vs Барселона",
+          "question": "Кто победит?",
+          "answers": ["Реал Мадрид", "Барселона"],
+          "resultIndex": 0
+        },
+        {
+          "id": 2,
+          "teams": "Ливерпуль vs Ман Сити",
+          "question": "Победитель матча?",
+          "answers": ["Ливерпуль", "Ман Сити"],
+          "resultIndex": 1
+        },
+        {
+          "id": 3,
+          "teams": "ПСЖ vs Бавария",
+          "question": "Кто пройдёт дальше?",
+          "answers": ["ПСЖ", "Бавария"],
+          "resultIndex": 1
+        }
+      ]
+    },
+    "esports": {
+      "name": "🎮 Киберспорт",
+      "matches": [
+        {
+          "id": 4,
+          "teams": "Team Spirit vs Team Liquid",
+          "question": "Победитель?",
+          "answers": ["Team Spirit", "Team Liquid"],
+          "resultIndex": 1
+        },
+        {
+          "id": 5,
+          "teams": "NAVI vs FaZe",
+          "question": "Кто выиграет карту?",
+          "answers": ["NAVI", "FaZe"],
+          "resultIndex": 0
+        },
+        {
+          "id": 6,
+          "teams": "G2 vs Fnatic",
+          "question": "Победитель матча?",
+          "answers": ["G2", "Fnatic"],
+          "resultIndex": 0
+        }
+      ]
+    },
+    "biathlon": {
+      "name": "🎯 Биатлон",
+      "matches": [
+        {
+          "id": 7,
+          "teams": "Бё vs Лагрейд",
+          "question": "Лучшее чистое время?",
+          "answers": ["Йоханнес Бё", "Стурла Лагрейд"],
+          "resultIndex": 1
+        },
+        {
+          "id": 8,
+          "teams": "Фуркад vs Бё",
+          "question": "Кто точнее в стрельбе?",
+          "answers": ["Мартен Фуркад", "Йоханнес Бё"],
+          "resultIndex": 1
+        }
+      ]
+    },
+    "f1": {
+      "name": "🏎️ Формула-1",
+      "matches": [
+        {
+          "id": 9,
+          "teams": "Ферстаппен vs Хэмилтон",
+          "question": "Кто финиширует выше?",
+          "answers": ["Ферстаппен", "Хэмилтон"],
+          "resultIndex": 0
+        },
+        {
+          "id": 10,
+          "teams": "Леклер vs Норрис",
+          "question": "Лучший круг в квалификации?",
+          "answers": ["Шарль Леклер", "Ландо Норрис"],
+          "resultIndex": 0
+        }
+      ]
+    }
+  },
+  "version": 1,
+  "lastUpdated": "2026-04-22"
+}
