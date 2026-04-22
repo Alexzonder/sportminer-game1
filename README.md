@@ -1,0 +1,1 @@
+sportminer-game1
