@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>SportMiner v6 | Динамические матчи из JSON</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            min-height: 100vh;
+            padding: 16px;
+            transition: background 0.2s, color 0.2s;
+        }
+        
+        body.light {
+            background: linear-gradient(135deg, #0a2f44 0%, #0c3b2f 100%);
+        }
+        body.light .game-card {
+            background: rgba(255,255,255,0.95);
+        }
+        body.light .theme-toggle, body.light .sound-toggle {
+            background: rgba(255,255,255,0.95);
+        }
+        body.light .balance-box, body.light .rank-box {
+            background: #1e2a3a;
+        }
+        body.light .match {
+            background: #fef9e8;
+        }
+        body.light .question {
+            color: #1e2a3a;
+        }
+        body.light .stats-panel {
+            background: #e9ecef;
+            color: #1e2a3a;
+        }
+        body.light .win { background: #d4edda; color: #155724; }
+        body.light .lose { background: #f8d7da; color: #721c24; }
+        body.light .league-btn.active {
+            background: #0077b6;
+        }
+        
+        body.dark {
+            background: linear-gradient(135deg, #0a0f1a 0%, #0a1a15 100%);
+        }
+        body.dark .game-card {
+            background: #1e2a2e;
+        }
+        body.dark .theme-toggle, body.dark .sound-toggle {
+            background: #1e2a2e;
+        }
+        body.dark .balance-box, body.dark .rank-box {
+            background: #0f1a1f;
+        }
+        body.dark .match {
+            background: #2a3a3a;
+        }
+        body.dark .question {
+            color: #e0e0e0;
+        }
+        body.dark .stats-panel {
+            background: #2a3538;
+            color: #e0e0e0;
+        }
+        body.dark .win { background: #1a4a2a; color: #8fdfb0; }
+        body.dark .lose { background: #5a2a2a; color: #ffaaaa; }
+        body.dark .league-btn.active {
+            background: #00b4d8;
+        }
+        body.dark .modal-content {
+            background: #2a2a2a;
+            color: white;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .game-card {
+            border-radius: 32px;
+            padding: 18px;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.3);
+        }
+
+        .theme-toggle, .sound-toggle {
+            position: absolute;
+            top: 0;
+            border: none;
+            font-size: 1.4rem;
+            cursor: pointer;
+            border-radius: 50px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .theme-toggle { right: 0; }
+        .sound-toggle { right: 50px; }
+
+        h1 {
+            text-align: center;
+            background: linear-gradient(135deg, #ffd966, #00a86b);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+        }
+
+        .top-stats {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        .balance-box {
+            border-radius: 40px;
+            padding: 10px 15px;
+            flex: 2;
+            text-align: center;
+        }
+        .balance-value {
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: #ffd966;
+        }
+        .rank-box {
+            border-radius: 40px;
+            padding: 8px 15px;
+            flex: 1.5;
+            text-align: center;
+        }
+        .rank-name { font-weight: bold; color: #ffaa44; font-size: 0.9rem; }
+        .xp-bar-bg {
+            background: #333;
+            border-radius: 20px;
+            height: 6px;
+            margin-top: 6px;
+            overflow: hidden;
+        }
+        .xp-bar-fill {
+            background: #ffaa44;
+            width: 0%;
+            height: 100%;
+            border-radius: 20px;
+        }
+
+        .leagues {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .league-btn {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 40px;
+            background: #6c757d;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .league-btn.active {
+            box-shadow: 0 0 8px currentColor;
+        }
+
+        .match {
+            border-left: 8px solid #ff9800;
+            border-radius: 24px;
+            padding: 16px;
+            margin: 15px 0;
+        }
+        .question {
+            font-weight: bold;
+            margin: 10px 0;
+            font-size: 1rem;
+        }
+        .answer-btn {
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+            border: none;
+            border-radius: 40px;
+            background: linear-gradient(90deg, #0077b6, #00b4d8);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        body.dark .answer-btn {
+            background: linear-gradient(90deg, #0f5b7a, #0e8a6e);
+        }
+
+        .stats-panel {
+            border-radius: 20px;
+            padding: 10px;
+            margin: 12px 0;
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+            font-size: 0.75rem;
+        }
+        .stat-value {
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .result-message {
+            padding: 10px;
+            border-radius: 40px;
+            text-align: center;
+            margin: 10px 0;
+            animation: fadeIn 0.3s;
+        }
+        .achievement {
+            background: linear-gradient(135deg, #ffd700, #ffaa00);
+            color: #1e2a3a;
+            font-weight: bold;
+        }
+
+        .reset-btn {
+            background: #ff5722;
+            border: none;
+            padding: 10px;
+            border-radius: 40px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 28px;
+            padding: 24px;
+            width: 280px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+        .modal-content p {
+            margin-bottom: 24px;
+            font-size: 1.1rem;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+        .modal-buttons button {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .modal-confirm {
+            background: #ff5722;
+            color: white;
+        }
+        .modal-cancel {
+            background: #6c757d;
+            color: white;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2rem;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+        @keyframes coinRain {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(-70px) rotate(360deg); opacity: 0; }
+        }
+        .coin-effect {
+            position: fixed;
+            font-size: 20px;
+            pointer-events: none;
+            z-index: 1000;
+            animation: coinRain 0.7s ease-out forwards;
+        }
+        .shake {
+            animation: shake 0.2s ease-in-out 0s 2;
+        }
+        @keyframes shake {
+            0%,100%{ transform: translateX(0); }
+            25%{ transform: translateX(-4px); }
+            75%{ transform: translateX(4px); }
+        }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <button class="sound-toggle" id="soundToggle">🔊</button>
+    <button class="theme-toggle" id="themeToggle">🌙</button>
+    <div class="game-card" id="gameCard">
+        <div class="loading">⏳ Загрузка матчей...</div>
+    </div>
+</div>
+
+<script>
+    // ========== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ==========
+    let LEAGUES = null;           // Загружается из JSON
+    let balance = 1000;
+    let totalWins = 0, totalLosses = 0, currentStreak = 0, xp = 0;
+    let currentLeague = "football";
+    let remainingMatches = [];
+    let currentMatch = null;
+    let gameActive = true;
+    let waitingBet = false;
+    let unlockedAchievements = [];
+    let soundEnabled = true;
+    let hasSeenOnboarding = false;
+    let dataLoaded = false;
+
+    // Ранги (остаются в коде)
+    const RANKS = [
+        { xpNeeded: 0, name: "🥉 Новичок", minPrize: 70, maxPrize: 110 },
+        { xpNeeded: 300, name: "⚡ Любитель", minPrize: 80, maxPrize: 120 },
+        { xpNeeded: 700, name: "🏅 Профи", minPrize: 90, maxPrize: 140 },
+        { xpNeeded: 1300, name: "👑 Эксперт", minPrize: 100, maxPrize: 160 },
+        { xpNeeded: 2000, name: "🏆 Легенда", minPrize: 120, maxPrize: 190 }
+    ];
+
+    // Достижения
+    const ACHIEVEMENTS = [
+        { id: "first_win", name: "Первая победа", rewardMoney: 100, rewardXp: 50, check: (s) => s.totalWins >= 1 },
+        { id: "streak5", name: "Победная серия", rewardMoney: 200, rewardXp: 100, check: (s) => s.currentStreak >= 5 },
+        { id: "balance2000", name: "Богач", rewardMoney: 300, rewardXp: 150, check: (s) => s.balance >= 2000 },
+        { id: "legend", name: "Легенда спорта", rewardMoney: 500, rewardXp: 200, check: (s) => getRankByXP(s.xp).name === "🏆 Легенда" },
+        { id: "winrate70", name: "Профит", rewardMoney: 250, rewardXp: 100, check: (s) => (s.totalWins+s.totalLosses)>=10 && (s.totalWins/(s.totalWins+s.totalLosses))>=0.7 },
+        { id: "totalWins10", name: "Десятка", rewardMoney: 150, rewardXp: 75, check: (s) => s.totalWins >= 10 }
+    ];
+
+    // DOM
+    let containerDiv;
+    let currentTheme = 'light';
+
+    // ========== ЗВУКИ ==========
+    let audioCtx = null;
+    let soundAllowed = false;
+
+    function initAudio() {
+        if (audioCtx) return;
+        try {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            audioCtx.suspend();
+        } catch(e) {}
+    }
+
+    function enableAudio() {
+        if (!audioCtx) initAudio();
+        if (audioCtx && audioCtx.state !== 'running') {
+            audioCtx.resume().then(() => { soundAllowed = true; }).catch(e => {});
+        }
+    }
+
+    function playBeep(type) {
+        if (!soundEnabled) return;
+        if (!audioCtx || !soundAllowed) { enableAudio(); return; }
+        try {
+            if (audioCtx.state !== 'running') { enableAudio(); return; }
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.type = 'sine';
+            oscillator.frequency.value = type === 'win' ? 880 : 440;
+            gainNode.gain.value = 0.15;
+            oscillator.start();
+            gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + (type === 'win' ? 0.2 : 0.15));
+            oscillator.stop(audioCtx.currentTime + (type === 'win' ? 0.2 : 0.15));
+        } catch(e) {}
+    }
+
+    function playAchievementSound() {
+        if (!soundEnabled) return;
+        if (!audioCtx || !soundAllowed) { enableAudio(); return; }
+        try {
+            if (audioCtx.state !== 'running') { enableAudio(); return; }
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.frequency.value = 1318.52;
+            gainNode.gain.value = 0.12;
+            oscillator.start();
+            gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.4);
+            oscillator.stop(audioCtx.currentTime + 0.4);
+        } catch(e) {}
+    }
+
+    function setupAudioOnFirstClick() {
+        const activate = () => {
+            enableAudio();
+            document.removeEventListener('click', activate);
+            document.removeEventListener('touchstart', activate);
+        };
+        document.addEventListener('click', activate);
+        document.addEventListener('touchstart', activate);
+    }
+
+    // ========== ЗАГРУЗКА МАТЧЕЙ ИЗ JSON ==========
+    async function loadMatchesFromJSON() {
+        try {
+            // Пытаемся загрузить с GitHub Pages
+            const response = await fetch('matches.json');
+            if (!response.ok) throw new Error('Не удалось загрузить matches.json');
+            const data = await response.json();
+            LEAGUES = data.leagues;
+            console.log('Матчи загружены из JSON, версия:', data.version);
+            return true;
+        } catch (error) {
+            console.error('Ошибка загрузки матчей:', error);
+            // Резервные данные на случай, если JSON недоступен
+            LEAGUES = {
+                football: { name: "⚽ Футбол", matches: [
+                    { id: 1, teams: "Реал Мадрид vs Барселона", question: "Кто победит?", answers: ["Реал Мадрид", "Барселона"], resultIndex: 0 }
+                ]},
+                esports: { name: "🎮 Киберспорт", matches: [
+                    { id: 2, teams: "Team Spirit vs Team Liquid", question: "Победитель?", answers: ["Team Spirit", "Team Liquid"], resultIndex: 1 }
+                ]}
+            };
+            return false;
+        }
+    }
+
+    // ========== КАСТОМНОЕ ОКНО ПОДТВЕРЖДЕНИЯ ==========
+    function customConfirm(message, onConfirm) {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.innerHTML = `
+            <div class="modal-content">
+                <p>${message}</p>
+                <div class="modal-buttons">
+                    <button class="modal-confirm">Да, сбросить</button>
+                    <button class="modal-cancel">Отмена</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        
+        overlay.querySelector('.modal-confirm').onclick = () => {
+            overlay.remove();
+            if (onConfirm) onConfirm();
+        };
+        overlay.querySelector('.modal-cancel').onclick = () => overlay.remove();
+    }
+
+    // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
+    function getRankByXP(xpVal) {
+        for(let i=RANKS.length-1; i>=0; i--) if(xpVal >= RANKS[i].xpNeeded) return RANKS[i];
+        return RANKS[0];
+    }
+    function getCurrentRank() { return getRankByXP(xp); }
+    function getXPForNextRank() {
+        const curr = getCurrentRank();
+        const idx = RANKS.findIndex(r => r.name === curr.name);
+        if(idx === RANKS.length-1) return null;
+        return RANKS[idx+1].xpNeeded - xp;
+    }
+
+    function showFlyingCoins(x, y) {
+        for(let i=0;i<10;i++) {
+            const coin = document.createElement('div');
+            coin.className = 'coin-effect';
+            coin.textContent = '💰';
+            coin.style.left = (x + Math.random() * 80 - 40) + 'px';
+            coin.style.top = (y + Math.random() * 50 - 25) + 'px';
+            document.body.appendChild(coin);
+            setTimeout(() => coin.remove(), 700);
+        }
+    }
+    
+    function shakeScreen() {
+        document.querySelector('.game-card')?.classList.add('shake');
+        setTimeout(() => document.querySelector('.game-card')?.classList.remove('shake'), 300);
+    }
+    
+    function showMessage(text, type) {
+        const area = document.getElementById('resultMessageArea');
+        if(area) {
+            area.innerHTML = `<div class="result-message ${type}">${text}</div>`;
+            setTimeout(() => area.innerHTML = '', 1800);
+        }
+    }
+
+    function checkAchievements() {
+        let anyNew = false;
+        for(let ach of ACHIEVEMENTS) {
+            if(!unlockedAchievements.includes(ach.id) && ach.check({ totalWins, totalLosses, currentStreak, balance, xp })) {
+                unlockedAchievements.push(ach.id);
+                balance += ach.rewardMoney;
+                xp += ach.rewardXp;
+                showMessage(`🏆 ДОСТИЖЕНИЕ: ${ach.name}! +${ach.rewardMoney}💰 +${ach.rewardXp}XP`, "achievement");
+                playAchievementSound();
+                anyNew = true;
+            }
+        }
+        if(anyNew) saveGame();
+    }
+
+    function saveGame() {
+        if (!dataLoaded) return;
+        const state = { balance, totalWins, totalLosses, currentStreak, xp, currentLeague, unlockedAchievements, soundEnabled, hasSeenOnboarding };
+        localStorage.setItem('sportminer_v6', JSON.stringify(state));
+    }
+    
+    function loadGame() {
+        const raw = localStorage.getItem('sportminer_v6');
+        if(!raw) { resetFullGame(); return; }
+        try {
+            const s = JSON.parse(raw);
+            balance = s.balance;
+            totalWins = s.totalWins;
+            totalLosses = s.totalLosses;
+            currentStreak = s.currentStreak;
+            xp = s.xp;
+            currentLeague = s.currentLeague || "football";
+            unlockedAchievements = s.unlockedAchievements || [];
+            soundEnabled = s.soundEnabled !== undefined ? s.soundEnabled : true;
+            hasSeenOnboarding = s.hasSeenOnboarding || false;
+            return true;
+        } catch(e) { resetFullGame(); return false; }
+    }
+    
+    function resetFullGame() {
+        balance = 1000;
+        totalWins = 0; totalLosses = 0; currentStreak = 0; xp = 0;
+        unlockedAchievements = [];
+        currentLeague = "football";
+        soundEnabled = true;
+        hasSeenOnboarding = false;
+        saveGame();
+    }
+    
+    function resetMatchesForLeague() {
+        if (!LEAGUES) return;
+        const leagueData = LEAGUES[currentLeague];
+        if(leagueData) {
+            remainingMatches = leagueData.matches.map(m => ({...m}));
+        } else {
+            remainingMatches = [];
+        }
+    }
+
+    function makeBet(selectedIdx) {
+        const BET_COST = 0.2;
+        if(balance < BET_COST || waitingBet || !gameActive || !currentMatch) return;
+        waitingBet = true;
+        balance -= BET_COST;
+        const isWin = (selectedIdx === currentMatch.resultIndex);
+        const rank = getCurrentRank();
+        let prize = Math.floor(Math.random() * (rank.maxPrize - rank.minPrize + 1) + rank.minPrize);
+        let streakBonus = 0;
+        if(isWin) {
+            if((currentStreak+1) >= 3 && (currentStreak+1) % 3 === 0) streakBonus = 50;
+            balance += prize + streakBonus;
+            totalWins++;
+            currentStreak++;
+            xp += 25 + (currentStreak > 2 ? 15 : 0);
+            showMessage(`✅ ВЕРНО! +${prize}💰 ${streakBonus ? `+ бонус ${streakBonus}` : ''}`, 'win');
+            playBeep('win');
+            showFlyingCoins(window.innerWidth/2, window.innerHeight-120);
+        } else {
+            totalLosses++;
+            currentStreak = 0;
+            xp += 5;
+            showMessage(`❌ НЕВЕРНО... -${BET_COST}💰`, 'lose');
+            playBeep('lose');
+            shakeScreen();
+        }
+        saveGame();
+        checkAchievements();
+        
+        if(remainingMatches.length === 0) {
+            gameActive = false;
+            renderUI();
+        } else {
+            currentMatch = remainingMatches.shift();
+            renderUI();
+        }
+        waitingBet = false;
+    }
+
+    function renderUI() {
+        if(!containerDiv || !LEAGUES) return;
+        
+        const rank = getCurrentRank();
+        const xpToNext = getXPForNextRank();
+        const nextRankNeeded = RANKS.find(r => r.xpNeeded > rank.xpNeeded);
+        const xpPercent = nextRankNeeded ? ((xp - rank.xpNeeded) / (nextRankNeeded.xpNeeded - rank.xpNeeded)) * 100 : 100;
+        const winRate = (totalWins+totalLosses)===0 ? 0 : Math.round(totalWins/(totalWins+totalLosses)*100);
+        
+        containerDiv.innerHTML = `
+            <h1>🏅 SportMiner PRO</h1>
+            <div class="leagues" id="leagueBar"></div>
+            <div class="top-stats">
+                <div class="balance-box"><div class="balance-value">💰 ${balance.toFixed(1)}</div></div>
+                <div class="rank-box"><div class="rank-name">${rank.name}</div><div class="xp-bar-bg"><div class="xp-bar-fill" style="width:${Math.min(100, xpPercent)}%"></div></div><div style="font-size:10px;">${xpToNext !== null ? `${xpToNext} XP` : 'MAX'}</div></div>
+            </div>
+            <div id="matchContainer"></div>
+            <div class="stats-panel">
+                <div>🏆<br><span class="stat-value">${totalWins}</span></div>
+                <div>💀<br><span class="stat-value">${totalLosses}</span></div>
+                <div>🔥<br><span class="stat-value">${currentStreak}</span></div>
+                <div>📊<br><span class="stat-value">${winRate}%</span></div>
+            </div>
+            <div id="resultMessageArea"></div>
+            <button id="resetGameBtn" class="reset-btn">🔄 Сброс игры</button>
+        `;
+
+        // Лиги
+        const leagueBar = document.getElementById('leagueBar');
+        for(let [key, league] of Object.entries(LEAGUES)) {
+            const btn = document.createElement('button');
+            btn.textContent = league.name;
+            btn.className = `league-btn ${currentLeague === key ? 'active' : ''}`;
+            btn.onclick = () => {
+                if(waitingBet) return;
+                currentLeague = key;
+                resetMatchesForLeague();
+                gameActive = true;
+                waitingBet = false;
+                currentMatch = remainingMatches.length > 0 ? remainingMatches.shift() : null;
+                saveGame();
+                renderUI();
+            };
+            leagueBar.appendChild(btn);
+        }
+
+        // Матч
+        const matchContainer = document.getElementById('matchContainer');
+        if(gameActive && remainingMatches.length > 0) {
+            if(!currentMatch) {
+                currentMatch = remainingMatches.shift();
+            }
+            let html = `<div class="match"><div class="question">${currentMatch.question}</div>`;
+            currentMatch.answers.forEach((ans, idx) => {
+                html += `<button class="answer-btn" data-ans="${idx}">${ans}</button>`;
+            });
+            html += `</div>`;
+            matchContainer.innerHTML = html;
+            
+            document.querySelectorAll('.answer-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    if(waitingBet || !gameActive) return;
+                    makeBet(parseInt(btn.dataset.ans));
+                });
+            });
+        } else if(remainingMatches.length === 0) {
+            matchContainer.innerHTML = `<div style="text-align:center;padding:20px;">🏁 Лига пройдена! Выбери другую лигу сверху.</div>`;
+            gameActive = false;
+        } else if(!gameActive) {
+            matchContainer.innerHTML = `<div style="text-align:center;padding:20px;">🏁 Лига пройдена! Выбери другую лигу сверху.</div>`;
+        }
+
+        // Кнопка сброса
+        document.getElementById('resetGameBtn')?.addEventListener('click', () => {
+            customConfirm('Сбросить весь прогресс?', () => {
+                resetFullGame();
+                showOnboarding();
+            });
+        });
+        
+        const soundToggle = document.getElementById('soundToggle');
+        if(soundToggle) soundToggle.textContent = soundEnabled ? '🔊' : '🔇';
+    }
+
+    function applyTheme(themeName) {
+        const body = document.body;
+        const themeBtn = document.getElementById('themeToggle');
+        
+        if(themeName === 'dark') {
+            body.classList.remove('light');
+            body.classList.add('dark');
+            if(themeBtn) themeBtn.textContent = '☀️';
+        } else {
+            body.classList.remove('dark');
+            body.classList.add('light');
+            if(themeBtn) themeBtn.textContent = '🌙';
+        }
+        currentTheme = themeName;
+        localStorage.setItem('sportminer_theme', themeName);
+    }
+
+    function showOnboarding() {
+        containerDiv.innerHTML = `
+            <div style="text-align:center;padding:30px;">
+                <h1>🏅 SportMiner</h1>
+                <p>Динамические матчи из JSON</p>
+                <p style="margin:10px 0; font-size:0.9rem;">Ставь на спорт — зарабатывай монеты!</p>
+                <button id="startBtn" style="background:#ff9800;padding:12px 30px;border:none;border-radius:60px;margin-top:20px;font-weight:bold;font-size:1.1rem;">🚀 Начать</button>
+            </div>
+        `;
+        document.getElementById('startBtn')?.addEventListener('click', () => {
+            hasSeenOnboarding = true;
+            resetMatchesForLeague();
+            currentMatch = remainingMatches.length > 0 ? remainingMatches.shift() : null;
+            gameActive = true;
+            saveGame();
+            renderUI();
+            applyTheme(currentTheme);
+        });
+    }
+
+    async function start() {
+        containerDiv = document.getElementById('gameCard');
+        
+        initAudio();
+        setupAudioOnFirstClick();
+        
+        // Загружаем тему
+        const savedTheme = localStorage.getItem('sportminer_theme');
+        currentTheme = (savedTheme === 'dark') ? 'dark' : 'light';
+        applyTheme(currentTheme);
+        
+        // Загружаем матчи из JSON
+        containerDiv.innerHTML = '<div class="loading">⏳ Загрузка матчей...</div>';
+        await loadMatchesFromJSON();
+        dataLoaded = true;
+        
+        // Загружаем сохранённую игру
+        const hasSave = localStorage.getItem('sportminer_v6');
+        if(!hasSave || !hasSeenOnboarding) {
+            resetMatchesForLeague();
+            showOnboarding();
+        } else {
+            loadGame();
+            resetMatchesForLeague();
+            if(remainingMatches.length > 0 && !currentMatch) {
+                currentMatch = remainingMatches.shift();
+            }
+            renderUI();
+        }
+        
+        // Кнопки тем и звука
+        const themeToggle = document.getElementById('themeToggle');
+        if(themeToggle) {
+            themeToggle.addEventListener('click', () => {
+                const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+                applyTheme(newTheme);
+            });
+        }
+        
+        const soundToggle = document.getElementById('soundToggle');
+        if(soundToggle) {
+            soundToggle.addEventListener('click', () => {
+                soundEnabled = !soundEnabled;
+                saveGame();
+                soundToggle.textContent = soundEnabled ? '🔊' : '🔇';
+            });
+        }
+    }
+    
+    start();
+</script>
+</body>
+</html>
