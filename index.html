@@ -329,7 +329,7 @@
 
 <script>
     // ========== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ==========
-    let LEAGUES = null;           // Загружается из JSON
+    let LEAGUES = null;
     let balance = 1000;
     let totalWins = 0, totalLosses = 0, currentStreak = 0, xp = 0;
     let currentLeague = "football";
@@ -342,7 +342,6 @@
     let hasSeenOnboarding = false;
     let dataLoaded = false;
 
-    // Ранги (остаются в коде)
     const RANKS = [
         { xpNeeded: 0, name: "🥉 Новичок", minPrize: 70, maxPrize: 110 },
         { xpNeeded: 300, name: "⚡ Любитель", minPrize: 80, maxPrize: 120 },
@@ -351,7 +350,6 @@
         { xpNeeded: 2000, name: "🏆 Легенда", minPrize: 120, maxPrize: 190 }
     ];
 
-    // Достижения
     const ACHIEVEMENTS = [
         { id: "first_win", name: "Первая победа", rewardMoney: 100, rewardXp: 50, check: (s) => s.totalWins >= 1 },
         { id: "streak5", name: "Победная серия", rewardMoney: 200, rewardXp: 100, check: (s) => s.currentStreak >= 5 },
@@ -361,7 +359,6 @@
         { id: "totalWins10", name: "Десятка", rewardMoney: 150, rewardXp: 75, check: (s) => s.totalWins >= 10 }
     ];
 
-    // DOM
     let containerDiv;
     let currentTheme = 'light';
 
@@ -432,8 +429,7 @@
     // ========== ЗАГРУЗКА МАТЧЕЙ ИЗ JSON ==========
     async function loadMatchesFromJSON() {
         try {
-            // Пытаемся загрузить с GitHub Pages
-            const response = await fetch('matches.json');
+            const response = await fetch('matches.json?_=' + Date.now());
             if (!response.ok) throw new Error('Не удалось загрузить matches.json');
             const data = await response.json();
             LEAGUES = data.leagues;
@@ -441,7 +437,6 @@
             return true;
         } catch (error) {
             console.error('Ошибка загрузки матчей:', error);
-            // Резервные данные на случай, если JSON недоступен
             LEAGUES = {
                 football: { name: "⚽ Футбол", matches: [
                     { id: 1, teams: "Реал Мадрид vs Барселона", question: "Кто победит?", answers: ["Реал Мадрид", "Барселона"], resultIndex: 0 }
@@ -454,7 +449,6 @@
         }
     }
 
-    // ========== КАСТОМНОЕ ОКНО ПОДТВЕРЖДЕНИЯ ==========
     function customConfirm(message, onConfirm) {
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
@@ -476,7 +470,6 @@
         overlay.querySelector('.modal-cancel').onclick = () => overlay.remove();
     }
 
-    // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
     function getRankByXP(xpVal) {
         for(let i=RANKS.length-1; i>=0; i--) if(xpVal >= RANKS[i].xpNeeded) return RANKS[i];
         return RANKS[0];
@@ -567,9 +560,7 @@
         if (!LEAGUES) return;
         const leagueData = LEAGUES[currentLeague];
         if (leagueData && leagueData.matches) {
-            // Создаём ПОЛНУЮ копию массива матчей (без потери элементов)
             remainingMatches = leagueData.matches.map(m => ({ ...m }));
-            // Сбрасываем текущий матч, он будет взят из remainingMatches при первом рендере
             currentMatch = null;
         } else {
             remainingMatches = [];
@@ -606,18 +597,11 @@
         saveGame();
         checkAchievements();
         
-        // Было:
-        // if(remainingMatches.length === 0) { gameActive = false; renderUI(); }
-        // else { currentMatch = remainingMatches.shift(); renderUI(); }
-
-        // Стало (с проверкой, что матч ещё есть):
         if(remainingMatches.length === 0) {
             gameActive = false;
             renderUI();
         } else {
-            // Удаляем ПРОЙДЕННЫЙ матч из начала массива
             remainingMatches.shift();
-            // Берём следующий матч (если есть) или оставляем null
             currentMatch = remainingMatches.length > 0 ? remainingMatches[0] : null;
             if (remainingMatches.length === 0) gameActive = false;
             renderUI();
@@ -652,7 +636,6 @@
             <button id="resetGameBtn" class="reset-btn">🔄 Сброс игры</button>
         `;
 
-        // Лиги
         const leagueBar = document.getElementById('leagueBar');
         for(let [key, league] of Object.entries(LEAGUES)) {
             const btn = document.createElement('button');
@@ -664,17 +647,15 @@
                 resetMatchesForLeague();
                 gameActive = true;
                 waitingBet = false;
-                currentMatch = remainingMatches.length > 0 ? remainingMatches.shift() : null;
+                currentMatch = remainingMatches.length > 0 ? remainingMatches[0] : null;
                 saveGame();
                 renderUI();
             };
             leagueBar.appendChild(btn);
         }
 
-        // Матч
         const matchContainer = document.getElementById('matchContainer');
         if(gameActive && remainingMatches.length > 0) {
-            // Берём ПЕРВЫЙ матч из массива, НЕ удаляя его (берём по индексу, а не shift)
             const displayMatch = currentMatch || remainingMatches[0];
             if (!currentMatch && remainingMatches.length > 0) {
                 currentMatch = remainingMatches[0];
@@ -689,7 +670,7 @@
             document.querySelectorAll('.answer-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     if(waitingBet || !gameActive) return;
-                makeBet(parseInt(btn.dataset.ans));
+                    makeBet(parseInt(btn.dataset.ans));
                 });
             });
         } else if(remainingMatches.length === 0) {
@@ -699,7 +680,6 @@
             matchContainer.innerHTML = `<div style="text-align:center;padding:20px;">🏁 Лига пройдена! Выбери другую лигу сверху.</div>`;
         }
 
-        // Кнопка сброса
         document.getElementById('resetGameBtn')?.addEventListener('click', () => {
             customConfirm('Сбросить весь прогресс?', () => {
                 resetFullGame();
@@ -740,7 +720,7 @@
         document.getElementById('startBtn')?.addEventListener('click', () => {
             hasSeenOnboarding = true;
             resetMatchesForLeague();
-            currentMatch = remainingMatches.length > 0 ? remainingMatches.shift() : null;
+            currentMatch = remainingMatches.length > 0 ? remainingMatches[0] : null;
             gameActive = true;
             saveGame();
             renderUI();
@@ -754,17 +734,14 @@
         initAudio();
         setupAudioOnFirstClick();
         
-        // Загружаем тему
         const savedTheme = localStorage.getItem('sportminer_theme');
         currentTheme = (savedTheme === 'dark') ? 'dark' : 'light';
         applyTheme(currentTheme);
         
-        // Загружаем матчи из JSON
         containerDiv.innerHTML = '<div class="loading">⏳ Загрузка матчей...</div>';
         await loadMatchesFromJSON();
         dataLoaded = true;
         
-        // Загружаем сохранённую игру
         const hasSave = localStorage.getItem('sportminer_v6');
         if(!hasSave || !hasSeenOnboarding) {
             resetMatchesForLeague();
@@ -773,12 +750,11 @@
             loadGame();
             resetMatchesForLeague();
             if(remainingMatches.length > 0 && !currentMatch) {
-                currentMatch = remainingMatches.shift();
+                currentMatch = remainingMatches[0];
             }
             renderUI();
         }
         
-        // Кнопки тем и звука
         const themeToggle = document.getElementById('themeToggle');
         if(themeToggle) {
             themeToggle.addEventListener('click', () => {
