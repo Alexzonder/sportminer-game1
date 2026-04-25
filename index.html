@@ -566,10 +566,14 @@
     function resetMatchesForLeague() {
         if (!LEAGUES) return;
         const leagueData = LEAGUES[currentLeague];
-        if(leagueData) {
-            remainingMatches = leagueData.matches.map(m => ({...m}));
+        if (leagueData && leagueData.matches) {
+            // Создаём ПОЛНУЮ копию массива матчей (без потери элементов)
+            remainingMatches = leagueData.matches.map(m => ({ ...m }));
+            // Сбрасываем текущий матч, он будет взят из remainingMatches при первом рендере
+            currentMatch = null;
         } else {
             remainingMatches = [];
+            currentMatch = null;
         }
     }
 
@@ -602,11 +606,20 @@
         saveGame();
         checkAchievements();
         
+        // Было:
+        // if(remainingMatches.length === 0) { gameActive = false; renderUI(); }
+        // else { currentMatch = remainingMatches.shift(); renderUI(); }
+
+        // Стало (с проверкой, что матч ещё есть):
         if(remainingMatches.length === 0) {
             gameActive = false;
             renderUI();
         } else {
-            currentMatch = remainingMatches.shift();
+            // Удаляем ПРОЙДЕННЫЙ матч из начала массива
+            remainingMatches.shift();
+            // Берём следующий матч (если есть) или оставляем null
+            currentMatch = remainingMatches.length > 0 ? remainingMatches[0] : null;
+            if (remainingMatches.length === 0) gameActive = false;
             renderUI();
         }
         waitingBet = false;
@@ -661,20 +674,22 @@
         // Матч
         const matchContainer = document.getElementById('matchContainer');
         if(gameActive && remainingMatches.length > 0) {
-            if(!currentMatch) {
-                currentMatch = remainingMatches.shift();
+            // Берём ПЕРВЫЙ матч из массива, НЕ удаляя его (берём по индексу, а не shift)
+            const displayMatch = currentMatch || remainingMatches[0];
+            if (!currentMatch && remainingMatches.length > 0) {
+                currentMatch = remainingMatches[0];
             }
-            let html = `<div class="match"><div class="question">${currentMatch.question}</div>`;
-            currentMatch.answers.forEach((ans, idx) => {
+            let html = `<div class="match"><div class="question">${displayMatch.question}</div>`;
+            displayMatch.answers.forEach((ans, idx) => {
                 html += `<button class="answer-btn" data-ans="${idx}">${ans}</button>`;
             });
             html += `</div>`;
             matchContainer.innerHTML = html;
-            
+    
             document.querySelectorAll('.answer-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
+                btn.addEventListener('click', () => {
                     if(waitingBet || !gameActive) return;
-                    makeBet(parseInt(btn.dataset.ans));
+                makeBet(parseInt(btn.dataset.ans));
                 });
             });
         } else if(remainingMatches.length === 0) {
